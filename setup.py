@@ -25,7 +25,6 @@ def find_port():
 # For more command and query syntax, please refer to the manual
 # (https://www.lesker.com/newweb/gauges/pdf/kjlc-mks-pdr900-vacuum-gauge-controller-manual.pdf), page 15.
 cmd_syntax = {
-
     'baud rate': '@001BRC?;FF',
     'serial number': '@001SNC?;FF',
     'download': '@001DL?;FF',
