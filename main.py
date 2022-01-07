@@ -5,10 +5,12 @@ import csv
 import os
 import signal
 import pandas as pd
+from datetime import date
+from datetime import datetime
 
 
-data_file = 'test.csv'
-headers = ['time', 'pressure (Torr)', 'time_in_mm']
+data_file = 'demo3.csv'
+headers = ['Date (mm/dd/yy)', 'Time', 'Pressure (Torr)', 'time_in_mm']
 
 
 class Pressure:
@@ -42,11 +44,17 @@ signal.signal(signal.SIGINT, signal_handler)
 interrupted = False
 
 
-def save_data(time_hh_mm_ss, pressure, time_in_mm):
+def diff_dates(d1, d2):
+    d1 = datetime.strptime(d1, "%m/%d/%Y")
+    d2 = datetime.strptime(d2, "%m/%d/%Y")
+    return abs(d1 - d2).days
+
+
+def save_data(date, time_hh_mm_ss, pressure, time_in_mm):
     try:
         with open(data_file, 'a') as opf:
             csv_writer = csv.writer(opf, delimiter=',')
-            csv_writer.writerow([time_hh_mm_ss, pressure, time_in_mm])
+            csv_writer.writerow([date, time_hh_mm_ss, pressure, time_in_mm])
     except Exception as ex:
         print("Error:", ex)
 
@@ -73,23 +81,28 @@ if __name__ == '__main__':
     while True:
         pres = Pressure(logging_time=1)
         p = pres.pressure_readout()
+        date_today = date.today().strftime("%m/%d/%Y")
         if counter == 0:
             t_0 = time.asctime().split()[3]
             t_0_in_mm = float(t_0.split(':')[0]) * 60 + float(t_0.split(':')[1]) + float(t_0.split(':')[2]) / 60
-            save_data(t_0, p, t_0_in_mm)
+            save_data(date_today, t_0, p, t_0_in_mm)
 
         else:
             t = time.asctime().split()[3]
-            t_0_in_mm = pd.read_csv(data_file)[headers[2]][0]
-            t_in_mm = float(t.split(':')[0]) * 60 + float(t.split(':')[1]) + float(t.split(':')[2]) / 60 - t_0_in_mm
-            save_data(t, p, t_in_mm)
+            t_0_in_mm = pd.read_csv(data_file)[headers[3]][0]
+            date_start = pd.read_csv(data_file)[headers[0]][0]
+
+            if date_today == date_start:
+                t_in_mm = float(t.split(':')[0]) * 60 + float(t.split(':')[1]) + float(t.split(':')[2]) / 60 - t_0_in_mm
+
+            else:
+                del_dates = diff_dates(date_start, date_today)
+                t_in_mm = float(t.split(':')[0]) * 60 + float(t.split(':')[1]) + float(t.split(':')[2]) / 60 \
+                          + (del_dates - 1) * 24 * 60 + (24 * 60 - t_0_in_mm)
+            save_data(date_today, t, p, t_in_mm)
 
         counter += 1
 
         if interrupted:
             print("*******STOP SAVING*******")
             exit()
-
-
-
-
