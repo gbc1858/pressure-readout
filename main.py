@@ -5,8 +5,7 @@ import csv
 import os
 import signal
 import pandas as pd
-from datetime import date
-from datetime import datetime
+from datetime import date, datetime
 
 
 data_file = 'demo3.csv'
@@ -14,18 +13,28 @@ headers = ['Date (mm/dd/yy)', 'Time', 'Pressure (Torr)', 'time_in_mm']
 
 
 class Pressure:
-    def __init__(self, logging_time):
+    def __init__(self, instrument, logging_time):
+        self.inst = instrument
         self.t = logging_time
 
     def setup_logger(self):
-        inst.write(cmd_syntax['datalogger start'].encode())
+        """
+        Set up the logger for the controller. Pressure data will be saved in the internal memory of the controller as
+        the logger being started for the given amount of time.
+        :return:
+        """
+        self.inst.write(cmd_syntax['datalogger start'].encode())
         time.sleep(self.t)
-        inst.write(cmd_syntax['datalogger stop'].encode())
+        self.inst.write(cmd_syntax['datalogger stop'].encode())
 
     def pressure_readout(self):
+        """
+        After setting up the logger of the controller, pull out the data from the memory.
+        :return:
+        """
         self.setup_logger()
-        inst.write(cmd_syntax['download'].encode())
-        data = str(inst.readline()).split(r"\r")[1:-1]
+        self.inst.write(cmd_syntax['download'].encode())
+        data = str(self.inst.readline()).split(r"\r")[1:-1]
         print(data)
         pressure = []
         for i in range(len(data)):
@@ -45,23 +54,37 @@ interrupted = False
 
 
 def diff_dates(d1, d2):
+    """
+    Find date difference between two given dates.
+    :param d1:
+    :param d2:
+    :return:
+    """
     d1 = datetime.strptime(d1, "%m/%d/%Y")
     d2 = datetime.strptime(d2, "%m/%d/%Y")
     return abs(d1 - d2).days
 
 
-def save_data(date, time_hh_mm_ss, pressure, time_in_mm):
+def save_data(current_date, time_hh_mm_ss, pressure, time_in_mm):
+    """
+    Save pressure data.
+    :param current_date: date of the acquired data
+    :param time_hh_mm_ss: time of the acquired data
+    :param pressure: averaged pressure data pulled from the memory
+    :param time_in_mm: accumulated time in mm
+    :return:
+    """
     try:
         with open(data_file, 'a') as opf:
             csv_writer = csv.writer(opf, delimiter=',')
-            csv_writer.writerow([date, time_hh_mm_ss, pressure, time_in_mm])
+            csv_writer.writerow([current_date, time_hh_mm_ss, pressure, time_in_mm])
     except Exception as ex:
         print("Error:", ex)
 
 
-if __name__ == '__main__':
-    file_exists = os.path.isfile(data_file)
-    if not file_exists:
+def initiate_data_file():
+    file_exist = os.path.isfile(data_file)
+    if not file_exist:
         print('CSV data file initiated.')
         file = open(data_file, 'w')
         writer = csv.writer(file)
@@ -69,17 +92,21 @@ if __name__ == '__main__':
         file.close()
     else:
         print('Saving data to existed file.')
+    return file_exist
 
+
+if __name__ == '__main__':
+    file_created = initiate_data_file()
     port = find_port()
     inst = MKS_PDR900(port)
 
-    if not file_exists:
+    if not file_created:
         counter = 0
     else:
         counter = 1
 
     while True:
-        pres = Pressure(logging_time=1)
+        pres = Pressure(instrument=inst, logging_time=1)
         p = pres.pressure_readout()
         date_today = date.today().strftime("%m/%d/%Y")
         if counter == 0:

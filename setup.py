@@ -9,6 +9,10 @@ def MKS_PDR900(port_address):
 
 
 def find_port():
+    """
+
+    :return: the port of the controller
+    """
     ports = serial.tools.list_ports.comports()
     available_ports = []
     for p in ports:
