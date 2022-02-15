@@ -8,5 +8,14 @@ Hardware:
 2. MKS series 900 controller
 
 ## Usage
-Run `main.py` first for data acquiring and saving. Then run `live_plot.py` for real-time plot.
+- In `main.py`, change/verify the name of the data file,
+    ~~~~
+    data_file = 'demo4.csv'
+    ~~~~
+- Run `main.py` for data acquiring and saving. Data will be saved in the designated csv file under the following  column headers. 
+
+    | Date (mm/dd/yy) | Time | Pressure (Torr) | time_in_mm |
+    |:---------------:|:----:|:---------------:|:----------:|
+
+- Run `live_plot.py` for real-time plot.
 
