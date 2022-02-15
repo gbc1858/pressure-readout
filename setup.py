@@ -19,7 +19,7 @@ def find_port():
         available_ports.append(p.device)
     port = difflib.get_close_matches('/dev/cu.usbserial-', available_ports)
     if not port:
-        print('No port found for transducer controller.')
+        print('ERROR: No port found for transducer controller.')
         quit()
     else:
         print('Transducer controller port (' + port[0] + ') found.')
